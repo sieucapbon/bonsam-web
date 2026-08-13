@@ -104,12 +104,6 @@
           "icon": "🧩"
         },
         {
-          "id": "w_1786635502050",
-          "title": "súng đồ chơi",
-          "targetAmount": 300000,
-          "icon": "chơi"
-        },
-        {
           "id": "w_1786638790715",
           "title": "Mua Bim Bim",
           "targetAmount": 10000,
@@ -245,7 +239,7 @@
       ]
     }
   ],
-  "activeProfileId": "p2",
+  "activeProfileId": "p1",
   "pinCode": "2310",
-  "isParentUnlocked": false
+  "isParentUnlocked": true
 }
