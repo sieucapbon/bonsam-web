@@ -324,11 +324,11 @@
   <div id="pin-modal" class="modal-overlay">
     <div class="modal-card modal-pin">
       <div class="modal-header">
-        <h3>🔒 Nhập Mã PIN Bố Mẹ</h3>
+        <h3 id="pin-modal-title">🔒 Nhập Mã PIN Bố Mẹ</h3>
         <button class="modal-close-btn">&times;</button>
       </div>
       <div class="pin-form-body">
-        <p>Nhập mã PIN để mở khóa chỉnh sửa cài đặt và số tiền:</p>
+        <p id="pin-modal-desc">Nhập mã PIN để mở khóa chỉnh sửa cài đặt và số tiền:</p>
         <input type="password" id="pin-input" placeholder="••••" maxlength="4" autofocus>
         <p class="pin-hint">(Mã PIN mặc định: <strong>1234</strong>)</p>
       </div>
@@ -343,7 +343,7 @@
   <div id="change-pin-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>🔑 Đổi Mã PIN Bố Mẹ</h3>
+        <h3 id="change-pin-modal-title">🔑 Đổi Mã PIN Bố Mẹ</h3>
         <button class="modal-close-btn">&times;</button>
       </div>
       <form id="change-pin-form">

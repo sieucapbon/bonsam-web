@@ -298,6 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return state.profiles.find(p => p.id === state.activeProfileId) || state.profiles[0];
   }
 
+  function getActivePinCode() {
+    const profile = getActiveProfile();
+    return profile.pinCode || state.pinCode || '1234';
+  }
+
   function renderAvatarHTML(avatarVal, fallbackGender) {
     if (!avatarVal) avatarVal = fallbackGender === 'girl' ? '👑' : '🏎️';
     if (avatarVal === 'car_racer' || avatarVal === 'car') avatarVal = '🏎️';
@@ -385,9 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     profilesList.querySelectorAll('.profile-chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        state.activeProfileId = chip.dataset.id;
-        saveData();
-        renderApp();
+        if (state.activeProfileId !== chip.dataset.id) {
+          state.activeProfileId = chip.dataset.id;
+          state.isParentUnlocked = false; // Always re-lock when switching profile!
+          clearAutoLockTimer();
+          saveData();
+          renderApp();
+        }
       });
     });
   }
@@ -925,6 +934,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     pendingLockCallback = typeof callback === 'function' ? callback : null;
     pinInput.value = '';
+
+    const profile = getActiveProfile();
+    const pinTitle = document.getElementById('pin-modal-title');
+    const pinDesc = document.getElementById('pin-modal-desc');
+    if (pinTitle) pinTitle.textContent = `🔒 Nhập Mã PIN Bố Mẹ (${profile.name})`;
+    if (pinDesc) pinDesc.textContent = `Nhập mã PIN Bố Mẹ dành riêng cho ${profile.name} để mở khóa:`;
+
     pinModal.classList.add('active');
     return false;
   }
@@ -959,6 +975,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (changePinBtn) {
     changePinBtn.addEventListener('click', () => {
       requireParentLock(() => {
+        const profile = getActiveProfile();
+        const changePinTitle = document.getElementById('change-pin-modal-title');
+        if (changePinTitle) changePinTitle.textContent = `🔑 Đổi Mã PIN Bố Mẹ (${profile.name})`;
+
         document.getElementById('current-pin-input').value = '';
         document.getElementById('new-pin-input').value = '';
         document.getElementById('confirm-pin-input').value = '';
@@ -970,12 +990,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (changePinForm) {
     changePinForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      const profile = getActiveProfile();
       const currentPin = document.getElementById('current-pin-input').value;
       const newPin = document.getElementById('new-pin-input').value;
       const confirmPin = document.getElementById('confirm-pin-input').value;
 
-      if (currentPin !== (state.pinCode || '1234')) {
-        alert('Mã PIN hiện tại không chính xác!');
+      if (currentPin !== getActivePinCode()) {
+        alert(`Mã PIN Bố Mẹ hiện tại của ${profile.name} không chính xác!`);
         return;
       }
 
@@ -989,21 +1010,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      profile.pinCode = newPin;
       state.pinCode = newPin;
       saveData();
       changePinModal.classList.remove('active');
-      showToast('🔑 Đã đổi mã PIN Bố Mẹ thành công!');
+      showToast(`🔑 Đã đổi mã PIN Bố Mẹ cho ${profile.name} thành công!`);
     });
   }
 
   submitPinBtn.addEventListener('click', () => {
-    const currentPinCode = state.pinCode || '1234';
+    const currentPinCode = getActivePinCode();
+    const profile = getActiveProfile();
     if (pinInput.value === currentPinCode) {
       state.isParentUnlocked = true;
       startAutoLockTimer();
       pinModal.classList.remove('active');
       renderApp();
-      showToast('🔓 Đã mở khóa Bố Mẹ (duy trì 5 phút)!');
+      showToast(`🔓 Đã mở khóa Bố Mẹ cho ${profile.name} (duy trì 5 phút)!`);
 
       if (pendingLockCallback) {
         const cb = pendingLockCallback;
@@ -1011,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cb();
       }
     } else {
-      alert(`Mã PIN không đúng! Vui lòng thử lại.`);
+      alert(`Mã PIN Bố Mẹ cho ${profile.name} không đúng! Vui lòng thử lại.`);
     }
   });
 
