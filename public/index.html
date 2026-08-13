@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Quản Lý Phần Thưởng Bon & Sam 🌟</title>
+
+  <!-- Google Fonts: Fredoka & Nunito for playful cute typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Canvas Confetti for Reward Animations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="theme-boy">
+  <div id="app-container" class="mobile-frame">
+    <!-- Top Header with Profile Selector & Dynamic Theme Badges -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="brand-title">
+          <span class="theme-icon">🏎️</span>
+          <span class="app-name">Thưởng & Phạt</span>
+        </div>
+        <div class="header-actions">
+          <button id="parent-lock-btn" class="btn-icon" title="Chế độ Bố Mẹ">
+            <span id="lock-status-icon">🔒</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Selector Cards Bar -->
+      <div class="profiles-bar">
+        <div id="profiles-list" class="profiles-scroll">
+          <!-- Rendered via JS -->
+        </div>
+        <button id="add-profile-btn" class="btn-add-profile" title="Thêm bé mới">
+          <span>+</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Active Profile Card -->
+    <section class="profile-hero-card">
+      <div class="hero-bg-decor"></div>
+      <div class="hero-content">
+        <div id="change-avatar-trigger" class="avatar-wrapper" title="Nhấn để đổi ảnh đại diện">
+          <div id="current-avatar" class="avatar-display">🏎️</div>
+          <div class="avatar-edit-badge">📷</div>
+          <div id="current-gender-tag" class="gender-tag boy">👦 Nam</div>
+        </div>
+        <div class="hero-info">
+          <h2 id="current-name" class="kid-name">Bé Bon</h2>
+          <div class="age-badge">
+            🎂 <span id="current-age">8 tuổi</span> <small>(<span id="current-birthyear">2018</span>)</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Money Balance Display -->
+      <div class="balance-card">
+        <div class="balance-label">Tổng Tiền Tích Lũy</div>
+        <div id="balance-amount" class="balance-value positive">+0 đ</div>
+        <div id="balance-subtext" class="balance-message">Bắt đầu tích điểm thôi nào! 🚀</div>
+
+        <div class="balance-stats">
+          <div class="stat-item reward-stat">
+            <span class="stat-icon">🎁</span>
+            <span class="stat-label">Đã Thưởng:</span>
+            <strong id="stat-total-reward">+0 đ</strong>
+          </div>
+          <div class="stat-item fine-stat">
+            <span class="stat-icon">⚡</span>
+            <span class="stat-label">Đã Phạt:</span>
+            <strong id="stat-total-fine">-0 đ</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="app-nav">
+      <button class="nav-tab active" data-tab="tab-actions">
+        <span class="tab-icon">🎯</span>
+        <span class="tab-label">Tích Điểm</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-wishlist">
+        <span class="tab-icon">🐷</span>
+        <span class="tab-label">Heo Đất</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-history">
+        <span class="tab-icon">📜</span>
+        <span class="tab-label">Nhật Ký</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-settings">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Cài Đặt</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <!-- TAB 1: ACTIONS (REWARDS & FINES LIST) -->
+      <section id="tab-actions" class="tab-content active">
+        <!-- Rewards Section -->
+        <div class="action-group rewards-group">
+          <div class="group-header">
+            <h3>🌟 Phần Thưởng (+ Thêm Tiền)</h3>
+            <span class="group-subtitle">Tích vào khi hoàn thành việc ngoan</span>
+          </div>
+          <div id="rewards-grid" class="cards-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Fines Section -->
+        <div class="action-group fines-group">
+          <div class="group-header">
+            <h3>⚠️ Phần Phạt (- Trừ Tiền)</h3>
+            <span class="group-subtitle">Bị phạt khi vi phạm quy định</span>
+          </div>
+          <div id="fines-grid" class="cards-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: PIGGY BANK / WISHLIST -->
+      <section id="tab-wishlist" class="tab-content">
+        <div class="wishlist-container">
+          <div class="piggy-hero">
+            <div class="piggy-animation">🐷</div>
+            <h3>Heo Đất & Mơ Ước Đồ Chơi</h3>
+            <p>Tích lũy tiền thưởng để đổi lấy món quà yêu thích nhé!</p>
+          </div>
+
+          <div class="wishlist-header">
+            <h4>Danh Sách Quà Mơ Ước</h4>
+            <button id="add-wish-btn" class="btn-primary-sm">+ Thêm Quà Mới</button>
+          </div>
+
+          <div id="wishlist-items" class="wishlist-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: HISTORY LOG -->
+      <section id="tab-history" class="tab-content">
+        <div class="history-container">
+          <div class="history-header">
+            <h3>📜 Lịch Sử Thưởng & Phạt</h3>
+            <button id="clear-history-btn" class="btn-outline-danger">Xóa Nhật Ký</button>
+          </div>
+          <div id="history-list" class="history-timeline">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SETTINGS (REWARDS/FINES MANAGEMENT & PIN) -->
+      <section id="tab-settings" class="tab-content">
+        <div class="settings-container">
+          <div class="settings-card">
+            <h3>🔐 Chế Độ Quản Lý (Bố Mẹ)</h3>
+            <p class="settings-desc">Cài đặt danh sách phần thưởng, tiền phạt và quản lý hồ sơ bé.</p>
+            <div class="pin-status-box">
+              <span id="parent-mode-status">Trạng thái: 🔓 Đã mở khóa</span>
+              <div class="btn-group">
+                <button id="change-pin-btn" class="btn-primary-sm">🔑 Đổi Mã PIN</button>
+                <button id="toggle-parent-mode-btn" class="btn-secondary">Khóa Lại</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manage Rewards & Fines -->
+          <div class="settings-section">
+            <div class="section-title-bar">
+              <h4>⚙️ Quản Lý Mục Thưởng & Phạt</h4>
+              <div class="btn-group">
+                <button id="btn-add-custom-reward" class="btn-success-sm">+ Thưởng Mới</button>
+                <button id="btn-add-custom-fine" class="btn-danger-sm">+ Phạt Mới</button>
+              </div>
+            </div>
+
+            <div class="manage-lists">
+              <h5>Danh sách Thưởng Hiện Tại:</h5>
+              <div id="manage-rewards-list" class="manage-grid"></div>
+
+              <h5 class="mt-4">Danh sách Phạt Hiện Tại:</h5>
+              <div id="manage-fines-list" class="manage-grid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: Profile Add / Edit -->
+  <div id="profile-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="profile-modal-title">Thêm Bé Mới 👶</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="profile-form">
+        <input type="hidden" id="profile-id-input" value="">
+        <div class="form-group">
+          <label for="profile-name">Tên Bé:</label>
+          <input type="text" id="profile-name" placeholder="Nhập tên bé (Ví dụ: Bon, Sam)" required>
+        </div>
+
+        <div class="form-group">
+          <label>Giới Tính (Tự động đổi giao diện theo bé):</label>
+          <div class="gender-selector">
+            <label class="gender-option boy">
+              <input type="radio" name="profile-gender" value="boy" checked>
+              <div class="gender-box">
+                <span class="gender-icon">🏎️ 👦</span>
+                <span>Bé Nam (Ô tô)</span>
+              </div>
+            </label>
+            <label class="gender-option girl">
+              <input type="radio" name="profile-gender" value="girl">
+              <div class="gender-box">
+                <span class="gender-icon">👑 👧</span>
+                <span>Bé Nữ (Búp Bê)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profile-birthyear">Năm Sinh (Để tự tính số tuổi):</label>
+          <select id="profile-birthyear" required>
+            <!-- Generated dynamically -->
+          </select>
+          <div id="calculated-age-preview" class="age-preview-text">Tuổi tính toán: 8 tuổi</div>
+        </div>
+
+        <div class="form-group">
+          <label>Biểu Tượng / Avatar Cho Bé:</label>
+          <div id="avatar-picker" class="avatar-grid">
+            <!-- Dynamically populated based on gender -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu Thay Đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add/Edit Reward or Fine Item -->
+  <div id="item-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="item-modal-title">Thêm Mục Thưởng/Phạt</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="item-form">
+        <input type="hidden" id="item-id-input" value="">
+        <input type="hidden" id="item-type-input" value="reward">
+
+        <div class="form-group">
+          <label for="item-title">Nội Dung / Hành Vi:</label>
+          <input type="text" id="item-title" placeholder="Ví dụ: Đi học đúng giờ" required>
+        </div>
+
+        <div class="form-group">
+          <label for="item-amount">Số Tiền (VNĐ):</label>
+          <input type="number" id="item-amount" placeholder="Ví dụ: 2000" step="500" min="500" required>
+        </div>
+
+        <div class="form-group">
+          <label for="item-icon">Biểu Tượng (Emoji):</label>
+          <input type="text" id="item-icon" placeholder="🎒" value="🎒" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu Mục Này</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add Wishlist Item -->
+  <div id="wish-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Thêm Quà Mơ Ước 🎁</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="wish-form">
+        <div class="form-group">
+          <label for="wish-title">Tên Món Quà / Đồ Chơi:</label>
+          <input type="text" id="wish-title" placeholder="Ví dụ: Bộ Lego Xe Đua" required>
+        </div>
+
+        <div class="form-group">
+          <label for="wish-amount">Giá Tiền Quà (VNĐ):</label>
+          <input type="number" id="wish-amount" placeholder="Ví dụ: 100000" step="5000" min="5000" required>
+        </div>
+
+        <div class="form-group">
+          <label for="wish-icon">Emoji Đồ Chơi:</label>
+          <input type="text" id="wish-icon" placeholder="🏎️" value="🏎️" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Thêm Vào Mơ Ước</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Parent PIN Lock Entry -->
+  <div id="pin-modal" class="modal-overlay">
+    <div class="modal-card modal-pin">
+      <div class="modal-header">
+        <h3>🔒 Nhập Mã PIN Bố Mẹ</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="pin-form-body">
+        <p>Nhập mã PIN để mở khóa chỉnh sửa cài đặt và số tiền:</p>
+        <input type="password" id="pin-input" placeholder="••••" maxlength="4" autofocus>
+        <p class="pin-hint">(Mã PIN mặc định: <strong>1234</strong>)</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+        <button type="button" id="submit-pin-btn" class="btn-primary">Mở Khóa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Change PIN Modal -->
+  <div id="change-pin-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🔑 Đổi Mã PIN Bố Mẹ</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="change-pin-form">
+        <div class="form-group">
+          <label for="current-pin-input">Mã PIN Hiện Tại:</label>
+          <input type="password" id="current-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="new-pin-input">Mã PIN Mới (4 chữ số):</label>
+          <input type="password" id="new-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-pin-input">Xác Nhận Mã PIN Mới:</label>
+          <input type="password" id="confirm-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu Mã PIN Mới</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Cute Redeem Gift Confirmation Modal -->
+  <div id="redeem-confirm-modal" class="modal-overlay">
+    <div class="modal-card modal-redeem">
+      <div class="modal-header">
+        <h3 id="redeem-modal-header-title">🎁 Đổi Quà Thôi Bé Ơi!</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="redeem-modal-body">
+        <div class="redeem-gift-preview">
+          <div id="redeem-gift-icon" class="redeem-icon-bounce">🎁</div>
+          <h2 id="redeem-gift-name" class="redeem-gift-title">Mua Bim Bim</h2>
+        </div>
+
+        <div class="redeem-cost-box">
+          <div class="cost-row">
+            <span>Dùng Tiền Tích Lũy:</span>
+            <strong id="redeem-gift-cost" class="text-danger">-10.000 đ</strong>
+          </div>
+          <div class="cost-row mt-1">
+            <span>Số Tiền Còn Lại:</span>
+            <strong id="redeem-balance-after" class="text-success">0 đ</strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer modal-footer-center">
+        <button type="button" class="btn-cancel modal-close-btn">Suy Nghĩ Lại</button>
+        <button type="button" id="confirm-redeem-btn" class="btn-primary btn-redeem-action">
+          🚀 ĐỔI QUÀ NGAY!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Change Avatar Photo & Emoji Modal -->
+  <div id="avatar-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📷 Đổi Ảnh Đại Diện Cho Bé</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="avatar-modal-body">
+        <div class="avatar-current-preview">
+          <div id="avatar-modal-preview" class="avatar-display-large">🏎️</div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label for="avatar-file-input">📸 1. Tải Ảnh Mới Từ Máy / Điện Thoại:</label>
+          <input type="file" id="avatar-file-input" accept="image/*" class="file-input-custom">
+        </div>
+
+        <div class="form-group mt-3">
+          <label>🎨 2. Hoặc Chọn Biểu Tượng Ngộ Nghĩnh:</label>
+          <div id="avatar-modal-picker" class="avatar-grid">
+            <!-- Dynamically rendered -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+        <button type="button" id="save-avatar-btn" class="btn-primary">Lưu Ảnh Đại Diện</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div id="toast-notification" class="toast hidden"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
