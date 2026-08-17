@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     profiles: [],
     activeProfileId: '',
     isParentUnlocked: false,
+    pinMode: 'global', // 'global' or 'per_profile'
+    globalPinCode: '1234',
+    masterPinCode: '9999',
     pinCode: '1234'
   };
 
@@ -46,8 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const historyList = document.getElementById('history-list');
 
   // Settings & Management
+  const editCurrentProfileBtn = document.getElementById('edit-current-profile-btn');
   const manageRewardsList = document.getElementById('manage-rewards-list');
   const manageFinesList = document.getElementById('manage-fines-list');
+  const manageProfilesList = document.getElementById('manage-profiles-list');
+  const btnAddProfileSettings = document.getElementById('btn-add-profile-settings');
   const parentModeStatus = document.getElementById('parent-mode-status');
   const toggleParentModeBtn = document.getElementById('toggle-parent-mode-btn');
 
@@ -58,6 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileBirthyearSelect = document.getElementById('profile-birthyear');
   const calculatedAgePreview = document.getElementById('calculated-age-preview');
   const avatarPicker = document.getElementById('avatar-picker');
+  const deleteProfileModalBtn = document.getElementById('delete-profile-modal-btn');
+  const perProfilePinGroup = document.getElementById('per-profile-pin-group');
+  const profilePinInput = document.getElementById('profile-pin-input');
+  const pinModeRadios = document.querySelectorAll('input[name="pin-mode-setting"]');
+
+  // Forgot / Reset PIN elements
+  const forgotPinBtn = document.getElementById('forgot-pin-btn');
+  const resetPinModal = document.getElementById('reset-pin-modal');
+  const resetPinForm = document.getElementById('reset-pin-form');
+  const masterPinInput = document.getElementById('master-pin-input');
+  const resetNewPinInput = document.getElementById('reset-new-pin-input');
+  const resetConfirmPinInput = document.getElementById('reset-confirm-pin-input');
 
   const itemModal = document.getElementById('item-modal');
   const itemForm = document.getElementById('item-form');
@@ -299,8 +317,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getActivePinCode() {
-    const profile = getActiveProfile();
-    return profile.pinCode || state.pinCode || '1234';
+    const mode = state.pinMode || 'global';
+    if (mode === 'per_profile') {
+      const profile = getActiveProfile();
+      return profile.pinCode || state.globalPinCode || state.pinCode || '1234';
+    }
+    return state.globalPinCode || state.pinCode || '1234';
   }
 
   function renderAvatarHTML(avatarVal, fallbackGender) {
@@ -369,8 +391,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lock Status
     lockStatusIcon.textContent = state.isParentUnlocked ? '🔓' : '🔒';
-    parentModeStatus.textContent = state.isParentUnlocked ? 'Trạng thái: 🔓 Đã mở khóa Bố Mẹ' : 'Trạng thái: 🔒 Đã khóa (Cần PIN)';
+    const isGlobalPin = (state.pinMode || 'global') === 'global';
+    const pinLabelText = isGlobalPin ? ' (Mã PIN dùng chung)' : ` (Mã PIN riêng ${profile.name})`;
+    parentModeStatus.textContent = state.isParentUnlocked 
+      ? `Trạng thái: 🔓 Đã mở khóa Bố Mẹ${pinLabelText}` 
+      : `Trạng thái: 🔒 Đã khóa${pinLabelText}`;
     toggleParentModeBtn.textContent = state.isParentUnlocked ? 'Khóa Lại' : 'Mở Khóa Bố Mẹ';
+
+    // PIN Mode Radio state sync
+    pinModeRadios.forEach(radio => {
+      radio.checked = radio.value === (state.pinMode || 'global');
+    });
 
     // Render Sub-Views
     renderRewardsGrid();
@@ -378,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderWishlist();
     renderHistory();
     renderManageLists();
+    renderManageProfiles();
   }
 
   function renderProfilesBar() {
@@ -392,8 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.addEventListener('click', () => {
         if (state.activeProfileId !== chip.dataset.id) {
           state.activeProfileId = chip.dataset.id;
-          state.isParentUnlocked = false; // Always re-lock when switching profile!
-          clearAutoLockTimer();
+          
+          // Re-lock ONLY if using individual per_profile PIN mode
+          if ((state.pinMode || 'global') === 'per_profile') {
+            state.isParentUnlocked = false;
+            clearAutoLockTimer();
+          }
+
           saveData();
           renderApp();
         }
@@ -704,6 +741,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function renderManageProfiles() {
+    if (!manageProfilesList) return;
+    manageProfilesList.innerHTML = state.profiles.map(p => `
+      <div class="manage-profile-card ${p.id === state.activeProfileId ? 'active-profile' : ''}">
+        <div class="manage-profile-info">
+          <div class="manage-profile-avatar">${renderAvatarHTML(p.avatar, p.gender)}</div>
+          <div class="manage-profile-details">
+            <h5>${p.name} ${p.id === state.activeProfileId ? '🌟' : ''}</h5>
+            <p>${p.gender === 'girl' ? '👧 Bé Nữ' : '👦 Bé Nam'} • ${calculateAge(p.birthYear)} (${p.birthYear})</p>
+          </div>
+        </div>
+        <div class="manage-profile-actions">
+          ${state.isParentUnlocked ? `
+            <button class="btn-undo-item edit-profile-btn" data-id="${p.id}" title="Chỉnh sửa">✏️</button>
+            ${state.profiles.length > 1 ? `<button class="btn-undo-item delete-profile-btn" data-id="${p.id}" title="Xóa bé">🗑️</button>` : ''}
+          ` : '🔒'}
+        </div>
+      </div>
+    `).join('');
+
+    manageProfilesList.querySelectorAll('.edit-profile-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditProfileModal(btn.dataset.id));
+    });
+
+    manageProfilesList.querySelectorAll('.delete-profile-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteProfile(btn.dataset.id));
+    });
+  }
+
+  function openEditProfileModal(profileId) {
+    requireParentLock(() => {
+      const profile = state.profiles.find(p => p.id === profileId);
+      if (!profile) return;
+
+      document.getElementById('profile-id-input').value = profile.id;
+      profileNameInput.value = profile.name;
+
+      const genderRadio = document.querySelector(`input[name="profile-gender"][value="${profile.gender}"]`);
+      if (genderRadio) genderRadio.checked = true;
+
+      profileBirthyearSelect.value = profile.birthYear;
+      calculatedAgePreview.textContent = `Tuổi tính toán: ${calculateAge(profile.birthYear)}`;
+
+      selectedAvatar = profile.avatar || (profile.gender === 'girl' ? '👑' : '🏎️');
+      renderAvatarPicker(profile.gender);
+
+      document.getElementById('profile-modal-title').textContent = `Sửa Thông Tin Bé ${profile.name} ✏️`;
+      if (deleteProfileModalBtn) {
+        if (state.profiles.length > 1) {
+          deleteProfileModalBtn.classList.remove('hidden');
+        } else {
+          deleteProfileModalBtn.classList.add('hidden');
+        }
+      }
+
+      if (perProfilePinGroup) {
+        if ((state.pinMode || 'global') === 'per_profile') {
+          perProfilePinGroup.classList.remove('hidden');
+          if (profilePinInput) profilePinInput.value = profile.pinCode || state.globalPinCode || '1234';
+        } else {
+          perProfilePinGroup.classList.add('hidden');
+        }
+      }
+
+      profileModal.classList.add('active');
+    });
+  }
+
+  function deleteProfile(profileId) {
+    requireParentLock(() => {
+      if (state.profiles.length <= 1) {
+        alert('Không thể xóa! Cần duy trì ít nhất 1 hồ sơ bé.');
+        return;
+      }
+      const profile = state.profiles.find(p => p.id === profileId);
+      if (!profile) return;
+
+      if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ hồ sơ của "${profile.name}" không?`)) {
+        state.profiles = state.profiles.filter(p => p.id !== profileId);
+        if (state.activeProfileId === profileId) {
+          state.activeProfileId = state.profiles[0].id;
+        }
+        saveData();
+        renderApp();
+        showToast(`🗑️ Đã xóa hồ sơ của ${profile.name}!`);
+        if (profileModal) profileModal.classList.remove('active');
+      }
+    });
+  }
+
   // Navigation Tab Switching
   navTabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -760,9 +887,40 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedAvatar = '🏎️';
       renderAvatarPicker('boy');
       document.getElementById('profile-modal-title').textContent = 'Thêm Bé Mới 👶';
+      if (deleteProfileModalBtn) deleteProfileModalBtn.classList.add('hidden');
       profileModal.classList.add('active');
     });
   });
+
+  if (editCurrentProfileBtn) {
+    editCurrentProfileBtn.addEventListener('click', () => {
+      openEditProfileModal(state.activeProfileId);
+    });
+  }
+
+  if (btnAddProfileSettings) {
+    btnAddProfileSettings.addEventListener('click', () => {
+      requireParentLock(() => {
+        document.getElementById('profile-id-input').value = '';
+        profileNameInput.value = '';
+        document.querySelector('input[name="profile-gender"][value="boy"]').checked = true;
+        selectedAvatar = '🏎️';
+        renderAvatarPicker('boy');
+        document.getElementById('profile-modal-title').textContent = 'Thêm Bé Mới 👶';
+        if (deleteProfileModalBtn) deleteProfileModalBtn.classList.add('hidden');
+        profileModal.classList.add('active');
+      });
+    });
+  }
+
+  if (deleteProfileModalBtn) {
+    deleteProfileModalBtn.addEventListener('click', () => {
+      const currentEditingId = document.getElementById('profile-id-input').value;
+      if (currentEditingId) {
+        deleteProfile(currentEditingId);
+      }
+    });
+  }
 
   profileForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -772,13 +930,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const birthYear = parseInt(profileBirthyearSelect.value);
 
     let profile = state.profiles.find(p => p.id === id);
-    if (!profile) {
+    const isNew = !profile;
+
+    if (isNew) {
       profile = {
         id: id,
         name: name,
         gender: gender,
         birthYear: birthYear,
         avatar: selectedAvatar,
+        pinCode: (state.pinMode === 'per_profile' && profilePinInput && profilePinInput.value) ? profilePinInput.value.trim() : (state.globalPinCode || '1234'),
         balance: 0,
         rewards: [
           { id: 'r1', title: 'Đi học đúng giờ', amount: 2000, icon: '🎒' },
@@ -796,12 +957,16 @@ document.addEventListener('DOMContentLoaded', () => {
       profile.gender = gender;
       profile.birthYear = birthYear;
       profile.avatar = selectedAvatar;
+      if (state.pinMode === 'per_profile' && profilePinInput && profilePinInput.value) {
+        profile.pinCode = profilePinInput.value.trim();
+      }
     }
 
     state.activeProfileId = id;
     profileModal.classList.remove('active');
     saveData();
     renderApp();
+    showToast(isNew ? `👶 Đã thêm bé mới ${name}!` : `✏️ Đã cập nhật thông tin bé ${name}!`);
   });
 
   // Items (Rewards & Fines) Modal & Form
@@ -938,8 +1103,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const profile = getActiveProfile();
     const pinTitle = document.getElementById('pin-modal-title');
     const pinDesc = document.getElementById('pin-modal-desc');
-    if (pinTitle) pinTitle.textContent = `🔒 Nhập Mã PIN Bố Mẹ (${profile.name})`;
-    if (pinDesc) pinDesc.textContent = `Nhập mã PIN Bố Mẹ dành riêng cho ${profile.name} để mở khóa:`;
+    const isGlobal = (state.pinMode || 'global') === 'global';
+
+    if (pinTitle) {
+      pinTitle.textContent = isGlobal ? '🔒 Nhập Mã PIN Bố Mẹ (Dùng Chung)' : `🔒 Nhập Mã PIN Bố Mẹ (${profile.name})`;
+    }
+    if (pinDesc) {
+      pinDesc.textContent = isGlobal 
+        ? 'Nhập mã PIN Bố Mẹ dùng chung để mở khóa:' 
+        : `Nhập mã PIN Bố Mẹ dành riêng cho ${profile.name} để mở khóa:`;
+    }
 
     pinModal.classList.add('active');
     return false;
@@ -972,12 +1145,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const changePinForm = document.getElementById('change-pin-form');
   const changePinBtn = document.getElementById('change-pin-btn');
 
+  // Listen to PIN Mode Radio switches
+  pinModeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const newMode = e.target.value;
+      if ((state.pinMode || 'global') === newMode) return;
+
+      requireParentLock(() => {
+        state.pinMode = newMode;
+        saveData();
+        renderApp();
+        showToast(newMode === 'global' 
+          ? '🌐 Đã chuyển sang chế độ 1 Mã PIN Dùng Chung' 
+          : '👶 Đã chuyển sang chế độ Mã PIN Riêng Từng Bé');
+      });
+    });
+  });
+
   if (changePinBtn) {
     changePinBtn.addEventListener('click', () => {
       requireParentLock(() => {
         const profile = getActiveProfile();
         const changePinTitle = document.getElementById('change-pin-modal-title');
-        if (changePinTitle) changePinTitle.textContent = `🔑 Đổi Mã PIN Bố Mẹ (${profile.name})`;
+        const isGlobal = (state.pinMode || 'global') === 'global';
+        if (changePinTitle) {
+          changePinTitle.textContent = isGlobal 
+            ? '🔑 Đổi Mã PIN Bố Mẹ (Dùng Chung)' 
+            : `🔑 Đổi Mã PIN Bố Mẹ (${profile.name})`;
+        }
 
         document.getElementById('current-pin-input').value = '';
         document.getElementById('new-pin-input').value = '';
@@ -996,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const confirmPin = document.getElementById('confirm-pin-input').value;
 
       if (currentPin !== getActivePinCode()) {
-        alert(`Mã PIN Bố Mẹ hiện tại của ${profile.name} không chính xác!`);
+        alert('Mã PIN Bố Mẹ hiện tại không chính xác!');
         return;
       }
 
@@ -1010,11 +1205,123 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      profile.pinCode = newPin;
-      state.pinCode = newPin;
+      if ((state.pinMode || 'global') === 'global') {
+        state.globalPinCode = newPin;
+        state.pinCode = newPin;
+        saveData();
+        changePinModal.classList.remove('active');
+        showToast('🔑 Đã đổi Mã PIN Bố Mẹ dùng chung thành công!');
+      } else {
+        profile.pinCode = newPin;
+        saveData();
+        changePinModal.classList.remove('active');
+        showToast(`🔑 Đã đổi mã PIN Bố Mẹ cho ${profile.name} thành công!`);
+      }
+    });
+  }
+
+  // Change Master PIN Modal Logic
+  const changeMasterPinModal = document.getElementById('change-master-pin-modal');
+  const changeMasterPinForm = document.getElementById('change-master-pin-form');
+  const changeMasterPinBtn = document.getElementById('change-master-pin-btn');
+
+  if (changeMasterPinBtn) {
+    changeMasterPinBtn.addEventListener('click', () => {
+      requireParentLock(() => {
+        document.getElementById('current-master-pin-input').value = '';
+        document.getElementById('new-master-pin-input').value = '';
+        document.getElementById('confirm-master-pin-input').value = '';
+        if (changeMasterPinModal) changeMasterPinModal.classList.add('active');
+      });
+    });
+  }
+
+  if (changeMasterPinForm) {
+    changeMasterPinForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const currentMaster = document.getElementById('current-master-pin-input').value.trim();
+      const newMaster = document.getElementById('new-master-pin-input').value.trim();
+      const confirmMaster = document.getElementById('confirm-master-pin-input').value.trim();
+
+      const expectedMaster = state.masterPinCode || '9999';
+      if (currentMaster !== expectedMaster) {
+        alert('Mã PIN Master hiện tại không chính xác!');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(newMaster)) {
+        alert('Mã PIN Master mới phải gồm đúng 4 chữ số!');
+        return;
+      }
+
+      if (newMaster !== confirmMaster) {
+        alert('Xác nhận mã PIN Master mới không trùng khớp!');
+        return;
+      }
+
+      state.masterPinCode = newMaster;
       saveData();
-      changePinModal.classList.remove('active');
-      showToast(`🔑 Đã đổi mã PIN Bố Mẹ cho ${profile.name} thành công!`);
+      if (changeMasterPinModal) changeMasterPinModal.classList.remove('active');
+      showToast('🆘 Đã đổi Mã PIN Master Khôi Phục thành công!');
+    });
+  }
+
+  // Forgot PIN & Reset PIN using Master PIN Logic
+  if (forgotPinBtn) {
+    forgotPinBtn.addEventListener('click', () => {
+      if (pinModal) pinModal.classList.remove('active');
+      if (masterPinInput) masterPinInput.value = '';
+      if (resetNewPinInput) resetNewPinInput.value = '';
+      if (resetConfirmPinInput) resetConfirmPinInput.value = '';
+      if (resetPinModal) resetPinModal.classList.add('active');
+    });
+  }
+
+  if (resetPinForm) {
+    resetPinForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const masterPin = masterPinInput.value.trim();
+      const newPin = resetNewPinInput.value.trim();
+      const confirmPin = resetConfirmPinInput.value.trim();
+
+      const expectedMasterPin = state.masterPinCode || '9999';
+      if (masterPin !== expectedMasterPin) {
+        alert('Mã PIN Master Khôi Phục không chính xác! (Mặc định: 9999)');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(newPin)) {
+        alert('Mã PIN mới phải gồm đúng 4 chữ số!');
+        return;
+      }
+
+      if (newPin !== confirmPin) {
+        alert('Xác nhận mã PIN mới không trùng khớp!');
+        return;
+      }
+
+      const profile = getActiveProfile();
+      if ((state.pinMode || 'global') === 'global') {
+        state.globalPinCode = newPin;
+        state.pinCode = newPin;
+      } else {
+        profile.pinCode = newPin;
+      }
+
+      state.isParentUnlocked = true;
+      startAutoLockTimer();
+
+      saveData();
+      if (resetPinModal) resetPinModal.classList.remove('active');
+      renderApp();
+
+      showToast('🔑 Đã khôi phục và đặt lại mã PIN Bố Mẹ mới thành công!');
+
+      if (pendingLockCallback) {
+        const cb = pendingLockCallback;
+        pendingLockCallback = null;
+        cb();
+      }
     });
   }
 

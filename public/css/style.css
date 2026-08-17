@@ -872,13 +872,21 @@ body {
 
 .pin-status-box {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px dashed var(--card-border);
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .manage-grid {
@@ -900,7 +908,7 @@ body {
 }
 
 /* Buttons System */
-.btn-primary, .btn-secondary, .btn-primary-sm, .btn-success-sm, .btn-danger-sm, .btn-outline-danger {
+.btn-primary, .btn-secondary, .btn-primary-sm, .btn-success-sm, .btn-danger-sm, .btn-warning-sm, .btn-outline-danger {
   border: none;
   font-weight: 700;
   border-radius: var(--radius-pill);
@@ -943,6 +951,26 @@ body {
   color: white;
   padding: 6px 12px;
   font-size: 0.8rem;
+}
+
+.btn-warning-sm {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-warning-sm:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+}
+
+.btn-warning-sm:active {
+  transform: scale(0.95);
 }
 
 .btn-outline-danger {
@@ -1233,3 +1261,223 @@ body.theme-girl .modal-redeem {
 .shake-animation {
   animation: shakeError 0.4s ease;
 }
+
+/* ==========================================================================
+   EDIT KID PROFILE & MANAGE PROFILES STYLES
+   ========================================================================== */
+.hero-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-edit-profile-hero {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit-profile-hero:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.btn-edit-profile-hero:active {
+  transform: scale(0.95);
+}
+
+/* Manage Profiles Grid in Settings */
+.manage-profiles-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.manage-profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.manage-profile-card.active-profile {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px var(--hero-glow);
+}
+
+.manage-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.manage-profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--badge-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  overflow: hidden;
+  border: 2px solid var(--primary-light);
+}
+
+.manage-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.manage-profile-details h5 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.manage-profile-details p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.manage-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-footer-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-group-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* PIN Mode Selector Styling */
+.pin-mode-selector-box {
+  margin: 16px 0;
+  padding: 14px;
+  background: var(--badge-bg);
+  border: 1px dashed var(--card-border);
+  border-radius: var(--radius-md);
+}
+
+.pin-mode-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+
+.pin-mode-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pin-mode-option {
+  cursor: pointer;
+}
+
+.pin-mode-option input[type="radio"] {
+  display: none;
+}
+
+.pin-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.pin-mode-icon {
+  font-size: 1.5rem;
+}
+
+.pin-mode-text strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.pin-mode-text small {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.pin-mode-option input[type="radio"]:checked + .pin-mode-card {
+  border-color: var(--primary-accent);
+  background: rgba(2, 132, 199, 0.12);
+  box-shadow: 0 4px 12px var(--hero-glow);
+}
+
+body.theme-girl .pin-mode-option input[type="radio"]:checked + .pin-mode-card {
+  background: rgba(236, 72, 153, 0.12);
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.btn-forgot-link {
+  background: none;
+  border: none;
+  color: var(--warning-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: all var(--transition-fast);
+  display: inline-block;
+}
+
+.btn-forgot-link:hover {
+  color: var(--primary-light);
+  transform: scale(1.05);
+}
+
+
+

@@ -52,7 +52,10 @@
           <div id="current-gender-tag" class="gender-tag boy">👦 Nam</div>
         </div>
         <div class="hero-info">
-          <h2 id="current-name" class="kid-name">Bé Bon</h2>
+          <div class="hero-name-row">
+            <h2 id="current-name" class="kid-name">Bé Bon</h2>
+            <button id="edit-current-profile-btn" class="btn-edit-profile-hero" title="Chỉnh sửa thông tin bé">✏️ Sửa</button>
+          </div>
           <div class="age-badge">
             🎂 <span id="current-age">8 tuổi</span> <small>(<span id="current-birthyear">2018</span>)</small>
           </div>
@@ -165,14 +168,51 @@
         <div class="settings-container">
           <div class="settings-card">
             <h3>🔐 Chế Độ Quản Lý (Bố Mẹ)</h3>
-            <p class="settings-desc">Cài đặt danh sách phần thưởng, tiền phạt và quản lý hồ sơ bé.</p>
+            <p class="settings-desc">Cài đặt danh sách phần thưởng, tiền phạt, quản lý hồ sơ và mã PIN bảo mật.</p>
+
+            <div class="pin-mode-selector-box">
+              <label class="pin-mode-label">⚙️ Cấu Hình Mã PIN Bố Mẹ:</label>
+              <div class="pin-mode-options">
+                <label class="pin-mode-option">
+                  <input type="radio" name="pin-mode-setting" value="global" checked>
+                  <div class="pin-mode-card">
+                    <span class="pin-mode-icon">🌐</span>
+                    <div class="pin-mode-text">
+                      <strong>1 Mã PIN Dùng Chung</strong>
+                      <small>Dễ nhớ, 1 PIN mở cho tất cả các bé</small>
+                    </div>
+                  </div>
+                </label>
+                <label class="pin-mode-option">
+                  <input type="radio" name="pin-mode-setting" value="per_profile">
+                  <div class="pin-mode-card">
+                    <span class="pin-mode-icon">👶</span>
+                    <div class="pin-mode-text">
+                      <strong>Mã PIN Riêng Từng Bé</strong>
+                      <small>Mỗi bé có 1 mã PIN riêng biệt</small>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div class="pin-status-box">
               <span id="parent-mode-status">Trạng thái: 🔓 Đã mở khóa</span>
               <div class="btn-group">
                 <button id="change-pin-btn" class="btn-primary-sm">🔑 Đổi Mã PIN</button>
+                <button id="change-master-pin-btn" class="btn-warning-sm">🆘 Đổi PIN Master</button>
                 <button id="toggle-parent-mode-btn" class="btn-secondary">Khóa Lại</button>
               </div>
             </div>
+          </div>
+
+          <!-- Manage Profiles Section -->
+          <div class="settings-section">
+            <div class="section-title-bar">
+              <h4>👨‍👩‍👧‍👦 Quản Lý Hồ Sơ Các Bé</h4>
+              <button id="btn-add-profile-settings" class="btn-success-sm">+ Thêm Bé Mới</button>
+            </div>
+            <div id="manage-profiles-list" class="manage-profiles-grid"></div>
           </div>
 
           <!-- Manage Rewards & Fines -->
@@ -240,6 +280,12 @@
           <div id="calculated-age-preview" class="age-preview-text">Tuổi tính toán: 8 tuổi</div>
         </div>
 
+        <div id="per-profile-pin-group" class="form-group">
+          <label for="profile-pin-input">🔑 Mã PIN Bố Mẹ Riêng (4 chữ số):</label>
+          <input type="password" id="profile-pin-input" placeholder="1234" maxlength="4">
+          <small class="form-hint" id="pin-input-hint">Mã PIN riêng để bảo vệ hồ sơ của bé này</small>
+        </div>
+
         <div class="form-group">
           <label>Biểu Tượng / Avatar Cho Bé:</label>
           <div id="avatar-picker" class="avatar-grid">
@@ -247,9 +293,12 @@
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
-          <button type="submit" class="btn-primary">Lưu Thay Đổi</button>
+        <div class="modal-footer modal-footer-between">
+          <button type="button" id="delete-profile-modal-btn" class="btn-danger-sm hidden">🗑️ Xóa Bé Này</button>
+          <div class="btn-group-right">
+            <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+            <button type="submit" class="btn-primary">Lưu Thay Đổi</button>
+          </div>
         </div>
       </form>
     </div>
@@ -331,6 +380,7 @@
         <p id="pin-modal-desc">Nhập mã PIN để mở khóa chỉnh sửa cài đặt và số tiền:</p>
         <input type="password" id="pin-input" placeholder="••••" maxlength="4" autofocus>
         <p class="pin-hint">(Mã PIN mặc định: <strong>1234</strong>)</p>
+        <button type="button" id="forgot-pin-btn" class="btn-forgot-link">❓ Quên mã PIN?</button>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
@@ -365,6 +415,68 @@
         <div class="modal-footer">
           <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
           <button type="submit" class="btn-primary">Lưu Mã PIN Mới</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Reset PIN using Master PIN Modal -->
+  <div id="reset-pin-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="reset-pin-modal-title">🆘 Khôi Phục Mã PIN Bố Mẹ</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="reset-pin-form">
+        <div class="form-group">
+          <label for="master-pin-input">🔑 Mã PIN Master Khôi Phục (Mặc định: <strong>9999</strong>):</label>
+          <input type="password" id="master-pin-input" placeholder="9999" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="reset-new-pin-input">🔑 Mã PIN Mới (4 chữ số):</label>
+          <input type="password" id="reset-new-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="reset-confirm-pin-input">Xác Nhận Mã PIN Mới:</label>
+          <input type="password" id="reset-confirm-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu PIN Mới & Mở Khóa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Change Master PIN Modal -->
+  <div id="change-master-pin-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🆘 Đổi Mã PIN Master Khôi Phục</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="change-master-pin-form">
+        <div class="form-group">
+          <label for="current-master-pin-input">Mã PIN Master Hiện Tại:</label>
+          <input type="password" id="current-master-pin-input" placeholder="9999" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="new-master-pin-input">Mã PIN Master Mới (4 chữ số):</label>
+          <input type="password" id="new-master-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-master-pin-input">Xác Nhận Mã PIN Master Mới:</label>
+          <input type="password" id="confirm-master-pin-input" placeholder="••••" maxlength="4" required>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel modal-close-btn">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu PIN Master Mới</button>
         </div>
       </form>
     </div>
